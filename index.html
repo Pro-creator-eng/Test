@@ -27,9 +27,32 @@ body:before{content:"";position:fixed;inset:0;pointer-events:none;z-index:-1;bac
 @media(prefers-reduced-motion:reduce){.heart-burst{display:none}}
 .time-grid{grid-template-columns:repeat(6,1fr)}@media(max-width:760px){.time-grid{grid-template-columns:repeat(2,1fr)}.time-cell:last-child{grid-column:auto}}
 .penguin-easter-egg{position:fixed;left:12px;bottom:max(14px,env(safe-area-inset-bottom));z-index:8;width:clamp(54px,10vw,88px);height:clamp(54px,10vw,88px);pointer-events:none;filter:drop-shadow(0 5px 5px #382d3140);transform:translateX(-130%) rotate(-7deg);opacity:0}.penguin-easter-egg img{display:block;width:100%;height:100%;object-fit:contain}.penguin-easter-egg.peeking{animation:penguin-peek 5.5s cubic-bezier(.22,.7,.2,1) both}@keyframes penguin-peek{0%{transform:translateX(-130%) rotate(-10deg);opacity:0}15%{transform:translateX(0) rotate(-7deg);opacity:1}48%{transform:translateX(0) rotate(-3deg);opacity:1}78%{transform:translateX(0) rotate(-7deg);opacity:1}100%{transform:translateX(-130%) rotate(5deg);opacity:0}}@media(prefers-reduced-motion:reduce){.penguin-easter-egg.peeking{animation:none;transform:translateX(0) rotate(-7deg);opacity:1}}
+.login-screen{position:fixed;inset:0;z-index:100;display:grid;place-items:center;padding:24px;background:radial-gradient(circle at 15% 15%,#f4dfd6,transparent 35%),radial-gradient(circle at 85% 80%,#dce5d9,transparent 35%),var(--cream)}
+.login-screen.hidden{display:none}
+.login-card{width:min(420px,100%);text-align:center;background:var(--paper);border:1px solid var(--line);border-radius:28px;box-shadow:var(--shadow);padding:clamp(28px,7vw,48px)}
+.login-card h1{font-size:clamp(2.2rem,8vw,3.2rem);font-weight:500;line-height:1.05;margin:14px 0 12px}
+.login-card p{color:var(--muted);line-height:1.7;margin:0 0 24px}
+.login-card form{display:grid;gap:12px}
+.login-card input{width:100%;border:1px solid var(--line);border-radius:999px;background:#fff;padding:15px 20px;text-align:center;font:inherit;font-size:1.05rem;color:var(--ink)}
+.login-card input:focus{outline:3px solid #c86f7940;border-color:var(--rose)}
+.login-card .primary{width:100%;min-height:52px}
+.login-error{min-height:21px;color:var(--rose-dark)!important;font-size:.88rem;margin:0!important}
+body.locked main,body.locked .modal{display:none}
 </style>
 </head>
-<body>
+<body class="locked">
+<div class="login-screen" id="login-screen" role="dialog" aria-modal="true" aria-label="Passwort eingeben">
+  <div class="login-card">
+    <div class="eyebrow">Nur für dich</div>
+    <h1 class="serif">Willkommen, Kiara</h1>
+    <p>Bitte gib unser Passwort ein:</p>
+    <form id="login-form">
+      <input id="login-password" type="password" inputmode="numeric" autocomplete="off" aria-label="Passwort" placeholder="TT.MM.JJJJ" required>
+      <button class="primary" type="submit">Seite öffnen <span class="arrow">→</span></button>
+      <p class="login-error" id="login-error" aria-live="polite"></p>
+    </form>
+  </div>
+</div>
 <!-- START: Foto, Gruß und der einzige Einstieg in die Seite. Lege euer Bild unter assets/hero.jpg ab. -->
 <main>
 <section class="screen active" id="home" aria-label="Geburtstagsgruß"><div class="hero"><div class="hero-copy"><div class="eyebrow">Ein kleiner Ort nur für dich</div><h1 class="serif">Herzlichen Glückwunsch <em>zum Geburtstag</em></h1><p>Heute feiern wir dich...</p><p>...und damit all die kleinen und großen Momente, die du in mein Leben zu ganz Besonderen gemacht hast.</p><button class="primary" data-go="hub">Entdecken <span class="arrow">→</span></button></div><div class="photo-frame"><div class="hero-photo"><img src="assets/hero.jpg" alt="Ein gemeinsames Foto von uns" onerror="this.remove()"></div></div></div></section>
@@ -42,6 +65,32 @@ body:before{content:"";position:fixed;inset:0;pointer-events:none;z-index:-1;bac
 <section class="screen" id="surprise"><div class="detail"><div class="topline"><span class="brand">eine kleine Überraschung ♡</span><button class="back" data-go="hub">← Zurück zur Auswahl</button></div><div class="detail-head"><div class="eyebrow">Kapitel vier</div><h2 class="serif">Dein Glücksmoment</h2><p>Manchmal braucht es nur einen kleinen Gedanken, der den Tag heller macht.</p></div><div class="surprise-card"><div class="surprise-orb" id="orb">✧</div><h3 class="serif">Eine Karte nur für dich</h3><p class="surprise-message" id="message" aria-live="polite">Drück den Knopf und hol dir einen kleinen Glücksmoment. ♡</p><button class="primary" id="draw">Überrasch mich <span class="arrow">✦</span></button></div></div></section>
 </main><div class="modal" id="modal" role="dialog" aria-modal="true" aria-label="Foto groß ansehen"><button id="close-modal" aria-label="Schließen">×</button><img id="modal-image" alt=""></div>
 <script>
+const ACCESS_PASSWORD = '01.03.2026';
+const loginScreen = document.querySelector('#login-screen');
+const loginForm = document.querySelector('#login-form');
+const loginPassword = document.querySelector('#login-password');
+const loginError = document.querySelector('#login-error');
+
+function unlockPage(){
+  document.body.classList.remove('locked');
+  loginScreen.classList.add('hidden');
+  sessionStorage.setItem('birthdayUnlocked','true');
+}
+
+if(sessionStorage.getItem('birthdayUnlocked') === 'true') unlockPage();
+
+loginForm.addEventListener('submit', event=>{
+  event.preventDefault();
+  if(loginPassword.value.trim() === ACCESS_PASSWORD){
+    loginPassword.value='';
+    loginError.textContent='';
+    unlockPage();
+  }else{
+    loginError.textContent='Das Datum stimmt noch nicht ganz.';
+    loginPassword.select();
+  }
+});
+
 // ANPASSEN: Startdatum eurer Beziehung im ISO-Format (Jahr-Monat-Tag, optional mit Uhrzeit).
 const START_DATE = new Date('2026-03-01T00:00:00');
 const pad = n => String(n).padStart(2,'0');
